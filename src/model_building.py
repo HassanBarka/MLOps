@@ -2,20 +2,17 @@ import os
 import mlflow
 import dagshub
 import pickle
+import json
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, 
-    f1_score, roc_auc_score, confusion_matrix,
-    classification_report
+    f1_score, roc_auc_score
 )
-import matplotlib.pyplot as plt
-from xgboost import XGBClassifier
-from imblearn.over_sampling import SMOTE
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+from imblearn.over_sampling import SMOTE
 
+# Initialize DagsHub and MLflow integration
 dagshub.init(repo_owner='HassanBarka', repo_name='MLOps', mlflow=True)
 
 def load_data(train_path: str, test_path: str):
@@ -29,10 +26,7 @@ def load_data(train_path: str, test_path: str):
         X_test = test_data.drop(columns=['score'], axis=1)
         y_test = test_data['score']
         
-        X_train = pd.DataFrame(X_train, columns=X_train.columns)
-        X_test = pd.DataFrame(X_test, columns=X_test.columns)
-        
-        return X_train, X_test, y_train, y_test 
+        return X_train, X_test, y_train, y_test
     except Exception as e:
         raise Exception(f"Error in data loading: {e}")
 
@@ -79,18 +73,18 @@ def train_model(X_train, y_train, model, params, sampling='none'):
 
 def main():
     try:
-
         # Load and prepare data
         train_path = "/home/hababi/data/processed/train_processed.csv"
         test_path = "/home/hababi/data/processed/test_processed.csv"
         X_train, X_test, y_train, y_test = load_data(train_path, test_path)
-
-        models_dir = "models"
         
         # Create models directory if it doesn't exist
-        models_dir.mkdir(parents=True, exist_ok=True)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        models_dir = os.path.join(project_root, "models")
+        os.makedirs(models_dir, exist_ok=True)
         
-        # Get models
+        # Create models
         models = create_models(n_estimators=5)
         
         best_model = None
@@ -116,8 +110,8 @@ def main():
                     
                     # Log parameters and metrics
                     mlflow.log_params(model_info['params'])
-                    mlflow.log_param("input_rows",X_train.shape[0])
-                    mlflow.log_param("input_cols",X_train.shape[1])
+                    mlflow.log_param("input_rows", X_train.shape[0])
+                    mlflow.log_param("input_cols", X_train.shape[1])
                     mlflow.log_param('sampling_method', sampling)
                     mlflow.log_metrics(metrics)
                     
@@ -132,29 +126,30 @@ def main():
                         }
         
         # Save only the best model
-         # Save only the best model
-        model_path = models_dir / "model.pkl"
-        with open(model_path, "wb") as file:
-            pickle.dump(best_model, file)
+        if best_model is not None:
+            model_path = os.path.join(models_dir, "model.pkl")
+            with open(model_path, "wb") as file:
+                pickle.dump(best_model, file)
+            print(f"Best model saved to {model_path}")
+        else:
+            raise ValueError("No valid model found to save.")
         
         # Save best model metrics
+        metrics_path = os.path.join(models_dir, "best_model_metrics.json")
+        with open(metrics_path, "w") as f:
+            json.dump(best_config['metrics'], f, indent=4)
+            print(f"Metrics saved to {metrics_path}")
+        
         print("\nBest Model Configuration:")
         print(f"Model: {best_config['model_name']}")
         print(f"Sampling: {best_config['sampling']}")
         print("Metrics:", best_config['metrics'])
-        
-        # Save metrics to a file
-        metrics_path = models_dir / "metrics.json"
-        with open(metrics_path, "w") as f:
-            json.dump(best_config['metrics'], f, indent=4)
         
     except Exception as e:
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
-
-
 
         # 'XGBoost': {
         #     'model': XGBClassifier(),
