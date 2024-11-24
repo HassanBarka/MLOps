@@ -14,3 +14,13 @@ dvc stage add -n data_collection \
   -d ./src/data_collection.py \
   -o --outs-no-cache --external /home/hababi/data/raw \
   python ./src/data_collection.py
+
+https://dagshub.com/HassanBarka/MLOps.mlflow
+
+import dagshub
+dagshub.init(repo_owner='HassanBarka', repo_name='MLOps', mlflow=True)
+
+import mlflow
+with mlflow.start_run():
+  mlflow.log_param('parameter name', 'value')
+  mlflow.log_metric('metric name', 1)

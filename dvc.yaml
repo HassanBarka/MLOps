@@ -14,3 +14,15 @@ stages:
     outs:
       - /home/hababi/data/processed:
           cache: false
+
+  model_building:
+    cmd: python ./src/model_building.py
+    deps:
+      - /home/hababi/data/processed
+      - ./src/model_building.py
+      - params.yaml
+    params:
+      - model_building.n_estimators
+    outs:
+      - ./models/model.pkl:
+          cache: true
