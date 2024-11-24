@@ -81,8 +81,8 @@ def main():
     try:
 
         # Load and prepare data
-        train_path = "/home/hababi/src/data/processed/train_processed.csv"
-        test_path = "/home/hababi/src/data/processed/test_processed.csv"
+        train_path = "/home/hababi/data/processed/train_processed.csv"
+        test_path = "/home/hababi/data/processed/test_processed.csv"
         X_train, X_test, y_train, y_test = load_data(train_path, test_path)
         
         # Get models
@@ -127,8 +127,8 @@ def main():
                         }
         
         # Save only the best model
-        os.makedirs('./models', exist_ok=True)
-        with open("./models/model.pkl", "wb") as file:
+        os.makedirs('./src/models', exist_ok=True)
+        with open("./src/models/model.pkl", "wb") as file:
             pickle.dump(best_model, file)
         
         # Save best model metrics
