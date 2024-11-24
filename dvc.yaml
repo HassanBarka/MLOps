@@ -20,6 +20,3 @@ stages:
     deps:
       - /home/hababi/data/processed
       - ./src/model_building.py
-    outs:
-      - ./models/model.pkl:
-          cache: true
