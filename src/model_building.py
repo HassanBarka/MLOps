@@ -84,6 +84,11 @@ def main():
         train_path = "/home/hababi/data/processed/train_processed.csv"
         test_path = "/home/hababi/data/processed/test_processed.csv"
         X_train, X_test, y_train, y_test = load_data(train_path, test_path)
+
+        models_dir = "models"
+        
+        # Create models directory if it doesn't exist
+        models_dir.mkdir(parents=True, exist_ok=True)
         
         # Get models
         models = create_models(n_estimators=5)
@@ -127,8 +132,9 @@ def main():
                         }
         
         # Save only the best model
-        os.makedirs('./src/models', exist_ok=True)
-        with open("./src/models/model.pkl", "wb") as file:
+         # Save only the best model
+        model_path = models_dir / "model.pkl"
+        with open(model_path, "wb") as file:
             pickle.dump(best_model, file)
         
         # Save best model metrics
@@ -136,6 +142,11 @@ def main():
         print(f"Model: {best_config['model_name']}")
         print(f"Sampling: {best_config['sampling']}")
         print("Metrics:", best_config['metrics'])
+        
+        # Save metrics to a file
+        metrics_path = models_dir / "metrics.json"
+        with open(metrics_path, "w") as f:
+            json.dump(best_config['metrics'], f, indent=4)
         
     except Exception as e:
         print(f"An error occurred: {e}")
