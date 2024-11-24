@@ -79,11 +79,6 @@ def train_model(X_train, y_train, model, params, sampling='none'):
 
 def main():
     try:
-        # Load parameters from params.yaml
-        import yaml
-        with open("./src/params.yaml", 'r') as f:
-            params = yaml.safe_load(f)
-        n_estimators = params['model_building']['n_estimators']
 
         # Load and prepare data
         train_path = "/home/hababi/src/data/processed/train_processed.csv"
@@ -91,7 +86,7 @@ def main():
         X_train, X_test, y_train, y_test = load_data(train_path, test_path)
         
         # Get models
-        models = create_models(n_estimators)
+        models = create_models(n_estimators=5)
         
         best_model = None
         best_score = -1
