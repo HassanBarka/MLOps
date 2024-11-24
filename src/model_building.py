@@ -43,7 +43,7 @@ def create_models(n_estimators):
             'model': RandomForestClassifier(),
             'params': {
                 'n_estimators': n_estimators,
-                'max_depth': 10,
+                'max_depth': 5,
                 'min_samples_split': 2,
                 'random_state': 42
             }
@@ -81,7 +81,7 @@ def main():
     try:
         # Load parameters from params.yaml
         import yaml
-        with open("params.yaml", 'r') as f:
+        with open("./src/params.yaml", 'r') as f:
             params = yaml.safe_load(f)
         n_estimators = params['model_building']['n_estimators']
 
@@ -116,6 +116,8 @@ def main():
                     
                     # Log parameters and metrics
                     mlflow.log_params(model_info['params'])
+                    mlflow.log_param("input_rows",X_train.shape[0])
+                    mlflow.log_param("input_cols",X_train.shape[1])
                     mlflow.log_param('sampling_method', sampling)
                     mlflow.log_metrics(metrics)
                     
