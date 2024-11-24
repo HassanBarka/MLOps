@@ -1,0 +1,16 @@
+dvc init 
+
+git init
+
+dvc stage add -n data_collection -d ./src/data_collection.py -o /home/hababi/data/raw --outs-no-cache python ./src/data_collection.py
+
+dvc stage add -n data_preparation -d ./src/data_preparation.py -o /home/hababi/data/processed --outs-no-cache python ./src/data_preparation.py
+
+dvc repros : for execute all pipeline
+
+dvc dag: show the pipeline
+
+dvc stage add -n data_collection \
+  -d ./src/data_collection.py \
+  -o --outs-no-cache --external /home/hababi/data/raw \
+  python ./src/data_collection.py
