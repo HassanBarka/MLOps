@@ -87,15 +87,15 @@ def scale_data(train_data: pd.DataFrame, test_data: pd.DataFrame) -> tuple:
     except Exception as e:
         raise Exception(f"Error during scaling: {str(e)}")
 
-def create_models(n_estimators):
+def create_models():
     """Create dictionary of models with their parameters"""
     try:
         models = {
             'RandomForest': {
                 'model': RandomForestClassifier(),
                 'params': {
-                    'n_estimators': n_estimators,
-                    'max_depth': 5,
+                    'n_estimators': 100,
+                    'max_depth': 10,
                     'min_samples_split': 2,
                     'random_state': 42
                 }
@@ -244,7 +244,7 @@ def main():
         class_names = np.unique(y_train)  # Get class names
 
         print("\nStep 3: Creating models...")
-        models = create_models(n_estimators=5)
+        models = create_models()
 
         best_model = None
         best_score = -1
