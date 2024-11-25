@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import os
-from sklearn.preprocessing import StandardScaler
 
 
 def load_data(filepath: str) -> pd.DataFrame:
@@ -14,24 +13,6 @@ def load_data(filepath: str) -> pd.DataFrame:
 def drop_null(df: pd.DataFrame) -> pd.DataFrame:
     return df.dropna()
 
-
-def scale_data(train_data: pd.DataFrame, test_data: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
-    try:
-        scaler = StandardScaler()
-
-        # Fit the scaler on training data and transform both train and test data
-        train_scaled = pd.DataFrame(
-            scaler.fit_transform(train_data),
-            columns=train_data.columns
-        )
-        test_scaled = pd.DataFrame(
-            scaler.transform(test_data),
-            columns=test_data.columns
-        )
-
-        return train_scaled, test_scaled
-    except Exception as e:
-        raise Exception(f"Error during scaling: {e}")
 
 
 def date_processing(df: pd.DataFrame, date_column: str) -> pd.DataFrame:
@@ -91,16 +72,12 @@ def main():
         train_data = remove_outliers(train_data, columns_to_filter)
         test_data = remove_outliers(test_data, columns_to_filter)
 
-
-        # Scale the data
-        train_scaled, test_scaled = scale_data(train_data, test_data)
-
         # Create processed data directory if it doesn't exist
         os.makedirs(processed_data_path, exist_ok=True)
 
         # Save the processed data
-        save_data(train_scaled, os.path.join(processed_data_path, "train_processed.csv"))
-        save_data(test_scaled, os.path.join(processed_data_path, "test_processed.csv"))
+        save_data(train_data, os.path.join(processed_data_path, "train_processed.csv"))
+        save_data(test_data, os.path.join(processed_data_path, "test_processed.csv"))
 
     except Exception as e:
         raise Exception(f"An error occurred: {e}")

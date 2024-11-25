@@ -18,23 +18,23 @@ stages:
     deps:
     - path: ./src/data_preparation.py
       hash: md5
-      md5: 41025fd997743387a2f3ae8e7b923627
-      size: 3696
+      md5: d1f6f1b96a65e971d681b295e99e620c
+      size: 2941
     outs:
     - path: /home/hababi/data/processed
       hash: md5
-      md5: 2e32fc9ccbc4169aca41ac61e3659be5.dir
-      size: 593785591
+      md5: 26787cb3055217d3910a5341288931f2.dir
+      size: 148658899
       nfiles: 2
   model_building:
     cmd: python ./src/model_building.py
     deps:
     - path: ./src/model_building.py
       hash: md5
-      md5: c19b3edb01fae3954dff79696f7edc3e
-      size: 6071
+      md5: 3bffdce006b5957f13446e06a72664fb
+      size: 6824
     - path: /home/hababi/data/processed
       hash: md5
-      md5: 2e32fc9ccbc4169aca41ac61e3659be5.dir
-      size: 593785591
+      md5: 26787cb3055217d3910a5341288931f2.dir
+      size: 148658899
       nfiles: 2

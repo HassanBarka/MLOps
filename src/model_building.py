@@ -5,15 +5,27 @@ import pickle
 import json
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, 
     f1_score, roc_auc_score
 )
+from xgboost import XGBClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, roc_curve, auc
+from itertools import cycle
 from imblearn.over_sampling import SMOTE
 
 # Initialize DagsHub and MLflow integration
 dagshub.init(repo_owner='HassanBarka', repo_name='MLOps', mlflow=True)
+
+mlflow.set_experiment("ML PIPELINE ")
+
+# Set the tracking URI for MLflow to log the experiment in DagsHub
+mlflow.set_tracking_uri("https://dagshub.com/HassanBarka/MLOps.mlflow") 
 
 def load_data(train_path: str, test_path: str):
     """Load train and test datasets"""
@@ -21,101 +33,245 @@ def load_data(train_path: str, test_path: str):
         train_data = pd.read_csv(train_path)
         test_data = pd.read_csv(test_path)
         
-        X_train = train_data.drop(columns=['score'], axis=1)
+        # Add debug prints
+        print(f"Train data shape: {train_data.shape}")
+        print(f"Test data shape: {test_data.shape}")
+        print(f"Train columns: {train_data.columns.tolist()}")
+        
+        # Verify 'score' column exists
+        if 'score' not in train_data.columns or 'score' not in test_data.columns:
+            raise ValueError("'score' column not found in the dataset")
+            
+        X_train = train_data.drop(columns=['score'])  # Removed axis parameter
         y_train = train_data['score']
-        X_test = test_data.drop(columns=['score'], axis=1)
+        X_test = test_data.drop(columns=['score'])    # Removed axis parameter
         y_test = test_data['score']
+        
+        # Add more debug prints
+        print(f"X_train shape: {X_train.shape}")
+        print(f"y_train shape: {y_train.shape}")
+        print(f"X_test shape: {X_test.shape}")
+        print(f"y_test shape: {y_test.shape}")
         
         return X_train, X_test, y_train, y_test
     except Exception as e:
-        raise Exception(f"Error in data loading: {e}")
+        raise Exception(f"Error in data loading: {str(e)}")
+
+def scale_data(train_data: pd.DataFrame, test_data: pd.DataFrame) -> tuple:
+    """Scale training and test data using StandardScaler"""
+    try:
+        print(f"Input train_data shape: {train_data.shape}")
+        print(f"Input test_data shape: {test_data.shape}")
+        
+        if not isinstance(train_data, pd.DataFrame) or not isinstance(test_data, pd.DataFrame):
+            raise ValueError("Input data must be pandas DataFrames")
+            
+        scaler = StandardScaler()
+        
+        # Convert to numpy array, scale, and convert back to DataFrame
+        train_scaled = pd.DataFrame(
+            scaler.fit_transform(train_data),
+            columns=train_data.columns,
+            index=train_data.index
+        )
+        test_scaled = pd.DataFrame(
+            scaler.transform(test_data),
+            columns=test_data.columns,
+            index=test_data.index
+        )
+        
+        print(f"Output train_scaled shape: {train_scaled.shape}")
+        print(f"Output test_scaled shape: {test_scaled.shape}")
+        
+        return train_scaled, test_scaled
+    except Exception as e:
+        raise Exception(f"Error during scaling: {str(e)}")
 
 def create_models(n_estimators):
     """Create dictionary of models with their parameters"""
-    models = {
-        'RandomForest': {
-            'model': RandomForestClassifier(),
-            'params': {
-                'n_estimators': n_estimators,
-                'max_depth': 5,
-                'min_samples_split': 2,
-                'random_state': 42
+    try:
+        models = {
+            'RandomForest': {
+                'model': RandomForestClassifier(),
+                'params': {
+                    'n_estimators': n_estimators,
+                    'max_depth': 5,
+                    'min_samples_split': 2,
+                    'random_state': 42
+                }
+            },
+            'XGBoost': {
+                'model': XGBClassifier(),
+                'params': {
+                    'n_estimators': 100,
+                    'max_depth': 6,
+                    'learning_rate': 0.1,
+                    'random_state': 42
+               }
+            },
+            'KNN': {
+                'model': KNeighborsClassifier(),
+                'params': {
+                    'n_neighbors': 5,
+                    'weights': 'uniform',
+                    'metric': 'minkowski'
+                }
+            },
+            'DT':{
+                'model': DecisionTreeClassifier(),
+                'params': {
+                    'criterion':'gini'
+                }
             }
         }
-    }
-    return models
+        return models
+    except Exception as e:
+        raise Exception(f"Error creating models: {str(e)}")
 
-def evaluate_model(model, X_test, y_test):
-    """Evaluate model and return metrics"""
-    y_pred = model.predict(X_test)
-    y_pred_proba = model.predict_proba(X_test)[:, 1]
-    
-    metrics = {
-        'accuracy': accuracy_score(y_test, y_pred),
-        'precision': precision_score(y_test, y_pred, average='weighted'),
-        'recall': recall_score(y_test, y_pred, average='weighted'),
-        'f1': f1_score(y_test, y_pred, average='weighted'),
-        'roc_auc': roc_auc_score(y_test, y_pred_proba)
-    }
-    return metrics
+
+def plot_confusion_matrix(cm, class_names, output_path):
+    """Plot confusion matrix as a heatmap."""
+    plt.figure(figsize=(8, 6))
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.title('Confusion Matrix')
+    plt.colorbar()
+    tick_marks = np.arange(len(class_names))
+    plt.xticks(tick_marks, class_names, rotation=45)
+    plt.yticks(tick_marks, class_names)
+
+    for i, j in np.ndindex(cm.shape):
+        plt.text(j, i, format(cm[i, j], 'd'),
+                 horizontalalignment='center',
+                 color='white' if cm[i, j] > cm.max() / 2 else 'black')
+
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
+
+def plot_roc_curves(y_test, y_proba, class_names, output_path):
+    """Plot ROC curves for all classes."""
+    plt.figure(figsize=(10, 8))
+    n_classes = len(class_names)
+    fpr, tpr, roc_auc = {}, {}, {}
+
+    for i in range(n_classes):
+        fpr[i], tpr[i], _ = roc_curve(y_test == i, y_proba[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+        plt.plot(fpr[i], tpr[i], lw=2, label=f'Class {class_names[i]} (AUC = {roc_auc[i]:.2f})')
+
+    plt.plot([0, 1], [0, 1], 'k--', lw=2)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve')
+    plt.legend(loc='lower right')
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
+
+def evaluate_model(model, X_test, y_test, class_names, output_dir):
+    """Evaluate model and log confusion matrix, ROC curves."""
+    try:
+        y_pred = model.predict(X_test)
+        y_proba = model.predict_proba(X_test)
+        
+        # Metrics
+        metrics = {
+            'accuracy': accuracy_score(y_test, y_pred),
+            'precision': precision_score(y_test, y_pred, average='weighted'),
+            'recall': recall_score(y_test, y_pred, average='weighted'),
+            'f1': f1_score(y_test, y_pred, average='weighted'),
+            'roc_auc': roc_auc_score(y_test, y_proba, multi_class='ovr')
+        }
+
+        # Confusion Matrix
+        cm = confusion_matrix(y_test, y_pred)
+        cm_path = os.path.join(output_dir, "confusion_matrix.png")
+        plot_confusion_matrix(cm, class_names, cm_path)
+        mlflow.log_artifact(cm_path, artifact_path="confusion_matrix")
+
+        # ROC Curves
+        roc_path = os.path.join(output_dir, "roc_curve.png")
+        plot_roc_curves(y_test, y_proba, class_names, roc_path)
+        mlflow.log_artifact(roc_path, artifact_path="roc_curves")
+
+        return metrics
+    except Exception as e:
+        raise Exception(f"Error during model evaluation: {str(e)}")
 
 def train_model(X_train, y_train, model, params, sampling='none'):
     """Train a model with optional SMOTE sampling"""
-    if sampling == 'smote':
-        smote = SMOTE(random_state=42)
-        X_train_sample, y_train_sample = smote.fit_resample(X_train, y_train)
-    else:
-        X_train_sample, y_train_sample = X_train, y_train
-    
-    clf = model.__class__(**params)
-    clf.fit(X_train_sample, y_train_sample)
-    return clf
+    try:
+        print(f"Training data shapes - X: {X_train.shape}, y: {y_train.shape}")
+        print(f"Sampling method: {sampling}")
+        
+        if sampling == 'smote':
+            smote = SMOTE(random_state=42)
+            X_train_sample, y_train_sample = smote.fit_resample(X_train, y_train)
+            print(f"After SMOTE - X: {X_train_sample.shape}, y: {y_train_sample.shape}")
+        else:
+            X_train_sample, y_train_sample = X_train, y_train
+        
+        clf = model.__class__(**params)
+        clf.fit(X_train_sample, y_train_sample)
+        return clf
+    except Exception as e:
+        raise Exception(f"Error during model training: {str(e)}")
 
 def main():
     try:
         # Load and prepare data
         train_path = "/home/hababi/data/processed/train_processed.csv"
         test_path = "/home/hababi/data/processed/test_processed.csv"
+        
+        print("\nStep 1: Loading data...")
         X_train, X_test, y_train, y_test = load_data(train_path, test_path)
         
-        # Create models directory if it doesn't exist
+        print("\nStep 2: Scaling data...")
+        X_train_scaled, X_test_scaled = scale_data(X_train, X_test)
+        
+        # Create models directory
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(current_dir)
         models_dir = os.path.join(project_root, "models")
+        output_dir = os.path.join(project_root, "outputs")
         os.makedirs(models_dir, exist_ok=True)
-        
-        # Create models
+        os.makedirs(output_dir, exist_ok=True)
+
+        class_names = np.unique(y_train)  # Get class names
+
+        print("\nStep 3: Creating models...")
         models = create_models(n_estimators=5)
-        
+
         best_model = None
         best_score = -1
         best_config = None
-        
-        # Train and evaluate models
+
+        print("\nStep 4: Training and evaluating models...")
         for model_name, model_info in models.items():
             for sampling in ['none', 'smote']:
                 print(f"\nTraining {model_name} with {sampling} sampling...")
                 
                 with mlflow.start_run(run_name=f"{model_name}_{sampling}"):
-                    # Train model
+
                     model = train_model(
-                        X_train, y_train,
+                        X_train_scaled, y_train,
                         model_info['model'],
                         model_info['params'],
                         sampling
                     )
+
+                    metrics = evaluate_model(model, X_test_scaled, y_test, class_names, output_dir)
                     
-                    # Evaluate model
-                    metrics = evaluate_model(model, X_test, y_test)
-                    
-                    # Log parameters and metrics
                     mlflow.log_params(model_info['params'])
                     mlflow.log_param("input_rows", X_train.shape[0])
                     mlflow.log_param("input_cols", X_train.shape[1])
                     mlflow.log_param('sampling_method', sampling)
                     mlflow.log_metrics(metrics)
-                    
-                    # Update best model if current model has better f1 score
+
                     if metrics['f1'] > best_score:
                         best_score = metrics['f1']
                         best_model = model
@@ -124,48 +280,31 @@ def main():
                             'sampling': sampling,
                             'metrics': metrics
                         }
-        
-        # Save only the best model
+
+        print("\nStep 5: Saving best model and metrics...")
         if best_model is not None:
             model_path = os.path.join(models_dir, "model.pkl")
             with open(model_path, "wb") as file:
                 pickle.dump(best_model, file)
             print(f"Best model saved to {model_path}")
+
+            metrics_path = os.path.join(models_dir, "best_model_metrics.json")
+            with open(metrics_path, "w") as f:
+                json.dump(best_config['metrics'], f, indent=4)
+            print(f"Metrics saved to {metrics_path}")
+
+            print("\nBest Model Configuration:")
+            print(f"Model: {best_config['model_name']}")
+            print(f"Sampling: {best_config['sampling']}")
+            print("Metrics:", best_config['metrics'])
         else:
             raise ValueError("No valid model found to save.")
-        
-        # Save best model metrics
-        metrics_path = os.path.join(models_dir, "best_model_metrics.json")
-        with open(metrics_path, "w") as f:
-            json.dump(best_config['metrics'], f, indent=4)
-            print(f"Metrics saved to {metrics_path}")
-        
-        print("\nBest Model Configuration:")
-        print(f"Model: {best_config['model_name']}")
-        print(f"Sampling: {best_config['sampling']}")
-        print("Metrics:", best_config['metrics'])
-        
+
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred: {str(e)}")
+        raise
+
 
 if __name__ == "__main__":
     main()
-
-        # 'XGBoost': {
-        #     'model': XGBClassifier(),
-        #     'params': {
-        #         'n_estimators': 100,
-        #         'max_depth': 6,
-        #         'learning_rate': 0.1,
-        #         'random_state': 42
-        #     }
-        # },
-        # 'KNN': {
-        #     'model': KNeighborsClassifier(),
-        #     'params': {
-        #         'n_neighbors': 5,
-        #         'weights': 'uniform',
-        #         'metric': 'minkowski'
-        #     }
-        # }
     
