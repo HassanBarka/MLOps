@@ -22,7 +22,7 @@ from imblearn.over_sampling import SMOTE
 # Initialize DagsHub and MLflow integration
 dagshub.init(repo_owner='HassanBarka', repo_name='MLOps', mlflow=True)
 
-mlflow.set_experiment("ML PIPELINE ")
+mlflow.set_experiment("ML PIPELINE")
 
 # Set the tracking URI for MLflow to log the experiment in DagsHub
 mlflow.set_tracking_uri("https://dagshub.com/HassanBarka/MLOps.mlflow") 
@@ -57,7 +57,7 @@ def load_data(train_path: str, test_path: str):
     except Exception as e:
         raise Exception(f"Error in data loading: {str(e)}")
 
-def scale_data(train_data: pd.DataFrame, test_data: pd.DataFrame) -> tuple:
+def scale_data(train_data: pd.DataFrame, test_data: pd.DataFrame,models_dir) -> tuple:
     """Scale training and test data using StandardScaler"""
     try:
         print(f"Input train_data shape: {train_data.shape}")
@@ -82,6 +82,12 @@ def scale_data(train_data: pd.DataFrame, test_data: pd.DataFrame) -> tuple:
         
         print(f"Output train_scaled shape: {train_scaled.shape}")
         print(f"Output test_scaled shape: {test_scaled.shape}")
+
+         # Save scaler to models directory
+        scaler_path = os.path.join(models_dir, "standard_scaler.pkl")
+        with open(scaler_path, "wb") as file:
+            pickle.dump(scaler, file)
+        print(f"Scaler saved to {scaler_path}")
         
         return train_scaled, test_scaled
     except Exception as e:
@@ -91,34 +97,34 @@ def create_models():
     """Create dictionary of models with their parameters"""
     try:
         models = {
-            'RandomForest': {
-                'model': RandomForestClassifier(),
-                'params': {
-                    'n_estimators': 50,
-                    'max_depth': 80,
-                    "bootstrap":False, 
-                    "max_features":'sqrt',
-                    'min_samples_split': 2,
-                    'random_state': 42
-                }
-            },
-            'XGBoost': {
-                'model': XGBClassifier(),
-                'params': {
-                    'n_estimators': 50,
-                    'max_depth': 80,
-                    'learning_rate': 0.01,
-                    'random_state': 42
-               }
-            },
-            'KNN': {
-                'model': KNeighborsClassifier(),
-                'params': {
-                    'n_neighbors': 5,
-                    'weights': 'uniform',
-                    'metric': 'minkowski'
-                }
-            },
+            # 'RandomForest': {
+            #     'model': RandomForestClassifier(),
+            #     'params': {
+            #         'n_estimators': 70,
+            #         'max_depth': 50,
+            #         "bootstrap":False, 
+            #         "max_features":'sqrt',
+            #         'min_samples_split': 2,
+            #         'random_state': 42
+            #     }
+            # },
+            # 'XGBoost': {
+            #     'model': XGBClassifier(),
+            #     'params': {
+            #         'n_estimators': 10,
+            #         'max_depth': 50,
+            #         'learning_rate': 0.01,
+            #         'random_state': 42
+            #    }
+            # },
+            # 'KNN': {
+            #     'model': KNeighborsClassifier(),
+            #     'params': {
+            #         'n_neighbors': 5,
+            #         'weights': 'uniform',
+            #         'metric': 'minkowski'
+            #     }
+            # },
             'DT':{
                 'model': DecisionTreeClassifier(),
                 'params': {
@@ -228,13 +234,7 @@ def main():
         # Load and prepare data
         train_path = "/home/hababi/data/processed/train_processed.csv"
         test_path = "/home/hababi/data/processed/test_processed.csv"
-        
-        print("\nStep 1: Loading data...")
-        X_train, X_test, y_train, y_test = load_data(train_path, test_path)
-        
-        print("\nStep 2: Scaling data...")
-        X_train_scaled, X_test_scaled = scale_data(X_train, X_test)
-        
+
         # Create models directory
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(current_dir)
@@ -242,6 +242,13 @@ def main():
         output_dir = os.path.join(project_root, "outputs")
         os.makedirs(models_dir, exist_ok=True)
         os.makedirs(output_dir, exist_ok=True)
+        
+        print("\nStep 1: Loading data...")
+        X_train, X_test, y_train, y_test = load_data(train_path, test_path)
+        
+        print("\nStep 2: Scaling data...")
+        X_train_scaled, X_test_scaled = scale_data(X_train, X_test,models_dir)
+        
 
         class_names = np.unique(y_train)  # Get class names
 
@@ -254,10 +261,12 @@ def main():
 
         print("\nStep 4: Training and evaluating models...")
         for model_name, model_info in models.items():
-            for sampling in ['none', 'smote']:
+            for sampling in ['none']:  # Ajoutez 'smote' si nécessaire
                 print(f"\nTraining {model_name} with {sampling} sampling...")
                 
-                with mlflow.start_run(run_name=f"{model_name}_{sampling}"):
+                with mlflow.start_run(run_name=f"{model_name}_{sampling}") as run:
+                    # Récupération du run_id
+                    run_id = run.info.run_id
 
                     model = train_model(
                         X_train_scaled, y_train,
@@ -267,7 +276,7 @@ def main():
                     )
 
                     metrics = evaluate_model(model, X_test_scaled, y_test, class_names, output_dir)
-                    
+
                     mlflow.log_params(model_info['params'])
                     mlflow.log_param("input_rows", X_train.shape[0])
                     mlflow.log_param("input_cols", X_train.shape[1])
@@ -280,7 +289,8 @@ def main():
                         best_config = {
                             'model_name': model_name,
                             'sampling': sampling,
-                            'metrics': metrics
+                            'metrics': metrics,
+                            'run_id': run_id  # Sauvegarde du run_id
                         }
 
         print("\nStep 5: Saving best model and metrics...")
@@ -294,6 +304,12 @@ def main():
             with open(metrics_path, "w") as f:
                 json.dump(best_config['metrics'], f, indent=4)
             print(f"Metrics saved to {metrics_path}")
+
+            # Enregistrer le run_id dans run_info.json
+            run_info_path = os.path.join(models_dir, "run_info.json")
+            with open(run_info_path, "w") as f:
+                json.dump({'run_id': best_config['run_id']}, f, indent=4)
+            print(f"Run info saved to {run_info_path}")
 
             print("\nBest Model Configuration:")
             print(f"Model: {best_config['model_name']}")
