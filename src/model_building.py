@@ -106,8 +106,8 @@ def create_models():
                 'model': XGBClassifier(),
                 'params': {
                     'n_estimators': 100,
-                    'max_depth': 6,
-                    'learning_rate': 0.1,
+                    'max_depth': 50,
+                    'learning_rate': 0.01,
                     'random_state': 42
                }
             },
