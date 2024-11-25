@@ -94,7 +94,7 @@ def create_models():
             'RandomForest': {
                 'model': RandomForestClassifier(),
                 'params': {
-                    'n_estimators': 100,
+                    'n_estimators': 50,
                     'max_depth': 80,
                     "bootstrap":False, 
                     "max_features":'sqrt',
@@ -105,8 +105,8 @@ def create_models():
             'XGBoost': {
                 'model': XGBClassifier(),
                 'params': {
-                    'n_estimators': 100,
-                    'max_depth': 50,
+                    'n_estimators': 50,
+                    'max_depth': 80,
                     'learning_rate': 0.01,
                     'random_state': 42
                }
