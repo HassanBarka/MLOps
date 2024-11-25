@@ -95,7 +95,9 @@ def create_models():
                 'model': RandomForestClassifier(),
                 'params': {
                     'n_estimators': 100,
-                    'max_depth': 10,
+                    'max_depth': 80,
+                    "bootstrap":False, 
+                    "max_features":'sqrt',
                     'min_samples_split': 2,
                     'random_state': 42
                 }
