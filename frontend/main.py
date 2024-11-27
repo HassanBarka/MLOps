@@ -8,6 +8,16 @@ import requests
 import json
 import os
 
+def map_drought_category(prediction):
+    categories = {
+        0: ("D0", "Abnormally Dry", "Short-term dryness slowing planting, growth of crops or pastures."),
+        1: ("D1", "Moderate Drought", "Some damage to crops, streams, and voluntary water-use restrictions."),
+        2: ("D2", "Severe Drought", "Crop or pasture losses likely, water shortages common."),
+        3: ("D3", "Extreme Drought", "Major crop/pasture losses, widespread water shortages."),
+        4: ("D4", "Exceptional Drought", "Exceptional and widespread crop/pasture losses and water emergencies."),
+    }
+    return categories.get(prediction, ("Unknown", "Unknown", "No description available"))
+
 # Activer le mode large
 st.set_page_config(layout="wide")
 
@@ -107,7 +117,7 @@ elif page == "Predict":
         if submit:
             res = requests.post("http://127.0.0.1:8000/predict", data=json.dumps(dd))
             predictions = res.json().get("predictions")
-            st.write(predictions)
+            st.write(map_drought_category(predictions[0]))
 
 else:
     st.title("Drought prediction from csv file")

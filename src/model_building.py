@@ -99,17 +99,13 @@ def create_models():
     """Create dictionary of models with their parameters"""
     try:
         models = {
-            'RandomForest': {
-                'model': RandomForestClassifier(),
+            'DT':{
+                'model': DecisionTreeClassifier(),
                 'params': {
-                    'n_estimators': 70,
-                    'max_depth': 50,
-                    "bootstrap":False, 
-                    "max_features":'sqrt',
-                    'min_samples_split': 2,
-                    'random_state': 42
+                    'criterion':'gini'
                 }
-            },
+            }
+            ,
             'XGBoost': {
                 'model': XGBClassifier(),
                 'params': {
@@ -119,10 +115,15 @@ def create_models():
                     'random_state': 42
                }
             },
-            'DT':{
-                'model': DecisionTreeClassifier(),
+            'RandomForest': {
+                'model': RandomForestClassifier(),
                 'params': {
-                    'criterion':'gini'
+                    'n_estimators': 70,
+                    'max_depth': 50,
+                    "bootstrap":False, 
+                    "max_features":'sqrt',
+                    'min_samples_split': 2,
+                    'random_state': 42
                 }
             }
         }
