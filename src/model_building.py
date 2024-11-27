@@ -16,13 +16,15 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, roc_curve, auc
+from mlflow.models.signature import infer_signature
 from itertools import cycle
 from imblearn.over_sampling import SMOTE
+import warnings
 
 # Initialize DagsHub and MLflow integration
 dagshub.init(repo_owner='HassanBarka', repo_name='MLOps', mlflow=True)
 
-mlflow.set_experiment("ML PIPELINE")
+mlflow.set_experiment("MLOps")
 
 # Set the tracking URI for MLflow to log the experiment in DagsHub
 mlflow.set_tracking_uri("https://dagshub.com/HassanBarka/MLOps.mlflow") 
@@ -116,14 +118,6 @@ def create_models():
             #         'learning_rate': 0.01,
             #         'random_state': 42
             #    }
-            # },
-            # 'KNN': {
-            #     'model': KNeighborsClassifier(),
-            #     'params': {
-            #         'n_neighbors': 5,
-            #         'weights': 'uniform',
-            #         'metric': 'minkowski'
-            #     }
             # },
             'DT':{
                 'model': DecisionTreeClassifier(),
@@ -261,7 +255,7 @@ def main():
 
         print("\nStep 4: Training and evaluating models...")
         for model_name, model_info in models.items():
-            for sampling in ['none']:  # Ajoutez 'smote' si nécessaire
+            for sampling in ['none']:  # ,'smote']:
                 print(f"\nTraining {model_name} with {sampling} sampling...")
                 
                 with mlflow.start_run(run_name=f"{model_name}_{sampling}") as run:
@@ -282,6 +276,23 @@ def main():
                     mlflow.log_param("input_cols", X_train.shape[1])
                     mlflow.log_param('sampling_method', sampling)
                     mlflow.log_metrics(metrics)
+
+                    # Create signature for the best model
+                    signature = infer_signature(X_train_scaled, model.predict(X_train_scaled))
+                    if model_name == 'XGBoost':
+                        mlflow.xgboost.log_model(
+                            model, 
+                            artifact_path=model_name,
+                            signature=signature
+                            )
+                    else:
+                        # Log the best model
+                        mlflow.sklearn.log_model(
+                            model,
+                            artifact_path=model_name,
+                            signature=signature
+                        )
+
 
                     if metrics['f1'] > best_score:
                         best_score = metrics['f1']
@@ -308,7 +319,7 @@ def main():
             # Enregistrer le run_id dans run_info.json
             run_info_path = os.path.join(models_dir, "run_info.json")
             with open(run_info_path, "w") as f:
-                json.dump({'run_id': best_config['run_id']}, f, indent=4)
+                json.dump({'run_id': best_config['run_id'], 'model_name': model_name}, f, indent=4)
             print(f"Run info saved to {run_info_path}")
 
             print("\nBest Model Configuration:")

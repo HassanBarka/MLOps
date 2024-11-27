@@ -20,3 +20,9 @@ stages:
     deps:
       - /home/hababi/data/processed
       - ./src/model_building.py
+
+  model_registration:
+    cmd: python ./src/model_reg.py
+    deps:
+    - ./models/run_info.json
+    - ./src/model_reg.py
