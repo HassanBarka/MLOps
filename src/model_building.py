@@ -99,26 +99,26 @@ def create_models():
     """Create dictionary of models with their parameters"""
     try:
         models = {
-            # 'RandomForest': {
-            #     'model': RandomForestClassifier(),
-            #     'params': {
-            #         'n_estimators': 70,
-            #         'max_depth': 50,
-            #         "bootstrap":False, 
-            #         "max_features":'sqrt',
-            #         'min_samples_split': 2,
-            #         'random_state': 42
-            #     }
-            # },
-            # 'XGBoost': {
-            #     'model': XGBClassifier(),
-            #     'params': {
-            #         'n_estimators': 10,
-            #         'max_depth': 50,
-            #         'learning_rate': 0.01,
-            #         'random_state': 42
-            #    }
-            # },
+            'RandomForest': {
+                'model': RandomForestClassifier(),
+                'params': {
+                    'n_estimators': 70,
+                    'max_depth': 50,
+                    "bootstrap":False, 
+                    "max_features":'sqrt',
+                    'min_samples_split': 2,
+                    'random_state': 42
+                }
+            },
+            'XGBoost': {
+                'model': XGBClassifier(),
+                'params': {
+                    'n_estimators': 10,
+                    'max_depth': 50,
+                    'learning_rate': 0.01,
+                    'random_state': 42
+               }
+            },
             'DT':{
                 'model': DecisionTreeClassifier(),
                 'params': {
@@ -255,7 +255,7 @@ def main():
 
         print("\nStep 4: Training and evaluating models...")
         for model_name, model_info in models.items():
-            for sampling in ['none']:  # ,'smote']:
+            for sampling in ['none' ,'smote']:
                 print(f"\nTraining {model_name} with {sampling} sampling...")
                 
                 with mlflow.start_run(run_name=f"{model_name}_{sampling}") as run:
