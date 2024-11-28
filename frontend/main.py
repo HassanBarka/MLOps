@@ -10,11 +10,12 @@ import os
 
 def map_drought_category(prediction):
     categories = {
-        0: ("D0", "Abnormally Dry", "Short-term dryness slowing planting, growth of crops or pastures."),
-        1: ("D1", "Moderate Drought", "Some damage to crops, streams, and voluntary water-use restrictions."),
-        2: ("D2", "Severe Drought", "Crop or pasture losses likely, water shortages common."),
-        3: ("D3", "Extreme Drought", "Major crop/pasture losses, widespread water shortages."),
-        4: ("D4", "Exceptional Drought", "Exceptional and widespread crop/pasture losses and water emergencies."),
+        0: '0 -> None, Normal or wet conditions',
+        1: "1 -> D0, Abnormally Dry",
+        2: "2 -> D1, Moderate Drought",
+        3: "3 -> D2, Severe Drought",
+        4: "4 -> D3, Extreme Drought", 
+        5: "5 -> D4, Exceptional Drought",
     }
     return categories.get(prediction, ("Unknown", "Unknown", "No description available"))
 
@@ -24,12 +25,12 @@ st.set_page_config(layout="wide")
 
 # Barre latérale pour la navigation
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Aller à :", ["Home","Predict", "Predict/CSV"])
+page = st.sidebar.radio("Go to :", ["Home","Predict", "Predict/csv"])
 
 # Navigation entre les pages
 if page == "Home":
     # defines an h1 header
-    st.title("Welcome Drought prediction App🌵")
+    st.title("Welcome to Drought prediction App🌵")
     st.write(
         """
         ## Welcome to the Drought Prediction App using Machine Learning.
@@ -43,7 +44,7 @@ if page == "Home":
     )
     st.image(
         "https://news.stanford.edu/__data/assets/image/0025/36808/Climate-change-from-drought-to-green-growth.jpeg",
-        caption="Analyse des conditions climatiques pour la prédiction de la sécheresse.",
+        caption="Drought Image",
         use_container_width=True,
     )
 
@@ -52,7 +53,7 @@ elif page == "Predict":
     st.subheader("Enter details below: ")
 
     # Formulaire avec deux colonnes
-    with st.form("form", clear_on_submit=False):
+    with st.form("form", clear_on_submit=True):
         col1, col2, col3, col4 = st.columns([1,1,1,1])
 
         # Champs dans la première colonne
@@ -113,11 +114,11 @@ elif page == "Predict":
         
 
         # Bouton de soumission
-        submit = st.form_submit_button("Submit this form")
+        submit = st.form_submit_button("Predict")
         if submit:
             res = requests.post("http://127.0.0.1:8000/predict", data=json.dumps(dd))
             predictions = res.json().get("predictions")
-            st.write(map_drought_category(predictions[0]))
+            st.write('##### '+map_drought_category(predictions[0]))
 
 else:
     st.title("Drought prediction from csv file")
@@ -128,6 +129,11 @@ else:
     # displays a button
     if data is not None:
         file = {"file": data.getvalue()}
-        res = requests.post("http://127.0.0.1:8000/predict/csv", files=file)
-        predictions = res.json().get("predictions")
-        st.text(predictions)
+        # Bouton de soumission
+        
+        submit = st.button("Predict")
+        if submit:
+            res = requests.post("http://127.0.0.1:8000/predict/csv", files=file)
+            predictions = res.json().get("predictions")
+            for predict in predictions:
+                st.write('##### '+map_drought_category(predict))
