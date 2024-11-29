@@ -3,27 +3,24 @@
     "builds": [
       {
         "src": "backend/main.py",
-        "use": "@vercel/python",
-        "config": {
-          "maxDuration": 500
-        }
+        "use": "@vercel/python"
       },
       {
         "src": "frontend/main.py",
         "use": "@vercel/static-build",
         "config": {
-          "distDir": "."
+          "buildCommand": "streamlit run main.py"
         }
       }
     ],
     "routes": [
       {
         "src": "/api/(.*)",
-        "dest": "/backend/main.py"
+        "dest": "/backend/$1"
       },
       {
         "src": "/(.*)",
-        "dest": "/frontend/main.py"
+        "dest": "/frontend/$1"
       }
     ]
 }  
