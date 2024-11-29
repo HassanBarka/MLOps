@@ -17,3 +17,5 @@ requests
 wheel==0.40.0
 flask
 gunicorn
+mlflow==2.18.0
+mlflow_skinny==2.18.0
