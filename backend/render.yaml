@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: fastapi-app
+    env: python
+    region: oregon  # Change region if needed
+    buildCommand: "pip install --no-cache-dir -r requirements.txt"
+    startCommand: "gunicorn -w 3 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT"
+    plan: free  # Choose free or paid plan
+    envVars:
+      - key: ENV
+        value: production  # Add any environment variables as needed

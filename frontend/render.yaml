@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: streamlit-app
+    env: python
+    region: oregon  # Change region if needed
+    buildCommand: "pip install --no-cache-dir -r requirements.txt"
+    startCommand: "streamlit run main.py --server.port=$PORT --server.address=0.0.0.0"
+    plan: free  # Choose free or paid plan
+    envVars:
+      - key: ENV
+        value: production  # Add any environment variables as needed
