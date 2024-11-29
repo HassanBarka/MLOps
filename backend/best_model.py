@@ -4,7 +4,7 @@ import json
 
 def model():
     mlflow.set_tracking_uri("https://dagshub.com/HassanBarka/MLOps.mlflow") 
-    reports_path = "../models/run_info.json"
+    reports_path = "models/run_info.json"
     with open(reports_path, 'r') as file:
         run_info = json.load(file)
 
