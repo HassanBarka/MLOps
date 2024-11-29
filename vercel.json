@@ -1,26 +1,15 @@
 {
     "version": 2,
-    "builds": [
+    "builds": 
       {
         "src": "backend/main.py",
         "use": "@vercel/python"
-      },
-      {
-        "src": "frontend/main.py",
-        "use": "@vercel/static-build",
-        "config": {
-          "buildCommand": "streamlit run main.py"
-        }
       }
-    ],
-    "routes": [
+      
+    ,
+    "routes": 
       {
         "src": "/api/(.*)",
         "dest": "/backend/$1"
-      },
-      {
-        "src": "/(.*)",
-        "dest": "/frontend/$1"
       }
-    ]
 }  
