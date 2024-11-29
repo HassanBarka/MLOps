@@ -2,11 +2,11 @@ FROM --platform=linux/amd64 python:3.11-slim
 
 WORKDIR /app
 
-COPY ./frontend/requirements.txt .
+COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./frontend .
+COPY . .
 
 EXPOSE 8501
 
