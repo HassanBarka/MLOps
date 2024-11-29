@@ -233,7 +233,7 @@ def main():
         # Create models directory
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(current_dir)
-        models_dir = os.path.join(project_root, "models")
+        models_dir = os.path.join(project_root, "backend/models")
         output_dir = os.path.join(project_root, "outputs")
         os.makedirs(models_dir, exist_ok=True)
         os.makedirs(output_dir, exist_ok=True)
@@ -317,6 +317,11 @@ def main():
                 json.dump(best_config['metrics'], f, indent=4)
             print(f"Metrics saved to {metrics_path}")
 
+            metrics_path = os.path.join(models_dir, "best_model_metrics.json")
+            with open(metrics_path, "w") as f:
+                json.dump(best_config['metrics'], f, indent=4)
+            print(f"Metrics saved to {metrics_path}")
+            
             # Enregistrer le run_id dans run_info.json
             run_info_path = os.path.join(models_dir, "run_info.json")
             with open(run_info_path, "w") as f:

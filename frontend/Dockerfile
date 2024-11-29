@@ -10,5 +10,7 @@ COPY . .
 
 EXPOSE 8501
 
-# Command to run the Streamlit app, dynamically binding the port
-CMD ["streamlit", "run", "--server.port", "$PORT", "main.py"]
+ENV PORT 8501
+
+# Entry point to dynamically bind to the Render-provided $PORT
+CMD ["sh", "-c", "streamlit run main.py --server.port=$PORT"]
