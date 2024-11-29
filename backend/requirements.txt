@@ -11,3 +11,5 @@ xgboost==2.1.2
 python-multipart
 threadpoolctl==3.1.0
 alembic
+starlette==0.26.1
+httpx==0.24.0
