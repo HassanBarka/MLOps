@@ -11,8 +11,9 @@ httpx==0.24.0
 # Utilities
 python-dotenv==1.0.0
 pydantic==1.10.7
-
-# Deployment and Environment
+Django
+markdown
+requests
 wheel==0.40.0
 flask
 gunicorn
