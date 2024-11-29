@@ -5,3 +5,4 @@ Requests==2.32.3
 streamlit==1.40.2
 python-multipart
 threadpoolctl==3.1.0
+alembic
