@@ -21,6 +21,9 @@ def map_drought_category(prediction):
 
 def main():
     port = int(os.environ.get("PORT", 8501))
+
+    BACKEND_URL = os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')
+
     # Activer le mode large
     st.set_page_config(layout="wide")
 
@@ -118,7 +121,7 @@ def main():
             # Bouton de soumission
             submit = st.form_submit_button("Predict")
             if submit:
-                res = requests.post("http://127.0.0.1:8000/predict", data=json.dumps(dd))
+                res = requests.post(f"{BACKEND_URL}/predict", data=json.dumps(dd))
                 predictions = res.json().get("predictions")
                 st.write('##### '+map_drought_category(predictions[0]))
 
@@ -135,10 +138,10 @@ def main():
             
             submit = st.button("Predict")
             if submit:
-                res = requests.post("http://127.0.0.1:8000/predict/csv", files=file)
+                res = requests.post(f"{BACKEND_URL}/predict/csv", files=file)
                 predictions = res.json().get("predictions")
                 for predict in predictions:
                     st.write('##### '+map_drought_category(predict))
 
 if __name__ == "__main__":
-    main()
+    main()         

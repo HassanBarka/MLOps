@@ -13,7 +13,7 @@ def date_processing(df, date_column="date"):
 
 
 def scale_data(df):
-    with open('../models/standard_scaler.pkl', 'rb') as file:
+    with open('models/standard_scaler.pkl', 'rb') as file:
         scalar = pickle.load(file)
     df = scalar.transform(df)
     return df
